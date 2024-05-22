@@ -854,7 +854,6 @@ bool Adafruit_BNO055::write8(adafruit_bno055_reg_t reg, uint8_t value) {
  */
 uint8_t Adafruit_BNO055::read8(adafruit_bno055_reg_t reg) {
   uint8_t buffer[1] = {reg};
-  printf("Reading register %u\n", buffer[0]);
   i2c_dev->write_then_read(buffer, 1, buffer, 1);
   return (uint8_t)buffer[0];
 }
@@ -868,6 +867,5 @@ bool Adafruit_BNO055::readLen(adafruit_bno055_reg_t reg, uint8_t *buffer,
   for (int i = 0; i < len; ++i) {
     buffer[i] = reg_buf[0] + i;
   }
-  printf("Reading register %u with length %u\n", reg_buf[0], len);
   return i2c_dev->write_then_read(reg_buf, 1, buffer, len);
 }

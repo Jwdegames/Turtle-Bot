@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 // #define DEBUG_SERIAL Serial
-#define DEBUG_MODE true
+// #define DEBUG_MODE true
 
 /*!
  *    @brief  Create an I2C device at a given address
@@ -72,7 +72,7 @@ bool Adafruit_I2CDevice::detected(void) {
     // A basic scanner, see if it ACK's
     // _wire->beginTransmission(_addr);
     fd = wiringPiI2CSetupInterface(_device, _addr);
-    printf("%d\n", wiringPiI2CReadReg8(fd, 0x00));
+    // printf("%d\n", wiringPiI2CReadReg8(fd, 0x00));
     if (fd == -1) {
         return false;
     }
@@ -221,7 +221,9 @@ bool Adafruit_I2CDevice::_read(uint8_t *buffer, size_t len, bool stop) {
             #endif 
                 return false;
         }
-		printf("%u\n", status);
+		#ifdef DEBUG_MODE
+			printf("%u\n", status);
+		#endif
         buffer[i] = status;
     }
     /*
