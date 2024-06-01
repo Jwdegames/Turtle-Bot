@@ -7,19 +7,30 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdio.h>
+
 #include "BNO055_OPI_5_PLUS/Adafruit_BNO055.h"
+
+#include "moving_parts/motor.h"
 
 #define BNO055_DEVICE_ID 0x28
 
 #define PIN_LED 27
 #define PIN_BUTTON 18
 
+motor * motor1;
+motor * motor2;
+motor * motor3;
+motor * motor4;
 
 void handle_interrupt(int s){
     printf("\nCaught signal %d\n",s);
     digitalWrite(21, LOW);
     digitalWrite(25, LOW);
     digitalWrite(26, LOW);
+    motor1 -> set_vals(0, 0);
+    motor2 -> set_vals(0, 0);
+    motor3 -> set_vals(0, 0);
+    motor4 -> set_vals(0, 0);
     digitalWrite(PIN_LED, LOW);
     exit(1); 
 
@@ -178,6 +189,10 @@ void config_bno055(Adafruit_BNO055 & bno055) {
 int main (int argc, char **argv)
 {
     wiringPiSetup();
+    motor1 = new motor(19, 20);
+    motor2 = new motor(21, 22);
+    motor3 = new motor(23, 25);
+    motor4 = new motor(24, 26);
     Adafruit_BNO055 bno055(0, "/dev/i2c-2", BNO055_DEVICE_ID);
     if (!bno055.begin()) {
         printf("Unable to begin BNO055!\n");
@@ -217,7 +232,7 @@ int main (int argc, char **argv)
 		printf("Failed to get the number of GPIO!\n");
     }
     pinMode(PIN_LED, OUTPUT);
-    for (int i = 20; i < 27 + 1; ++i) {
+    for (int i = 18; i < 27 + 1; ++i) {
         pinMode(i, OUTPUT);
     }
     // pinMode(PIN_BUTTON, INPUT);
@@ -233,17 +248,15 @@ int main (int argc, char **argv)
     sigaction(SIGINT, &sigIntHandler, NULL);
 
    // pause();
-
+    
     while (1)
     {   
     
         digitalWrite(PIN_LED, HIGH);
-        digitalWrite(21, HIGH);
-        digitalWrite(22, LOW);
-        digitalWrite(25, HIGH);
-        digitalWrite(23, LOW);
-        digitalWrite(26, HIGH);
-        digitalWrite(24, LOW);
+        motor1 -> set_vals(1, 0);
+        motor2 -> set_vals(1, 0);
+        motor3 -> set_vals(1, 0);
+        motor4 -> set_vals(1, 0);
 
         bno055.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
         bno055.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
@@ -262,9 +275,10 @@ int main (int argc, char **argv)
         
         // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         delay(500);
-        digitalWrite(21, LOW);
-        digitalWrite(25, LOW);
-        digitalWrite(26, LOW);
+        motor1 -> set_vals(0, 0);
+        motor2 -> set_vals(0, 0);
+        motor3 -> set_vals(0, 0);
+        motor4 -> set_vals(0, 0);
         digitalWrite(PIN_LED, LOW);
         printf("Off\n");
         delay(500);
