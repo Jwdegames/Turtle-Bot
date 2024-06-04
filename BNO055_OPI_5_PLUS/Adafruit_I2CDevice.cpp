@@ -36,7 +36,7 @@ bool Adafruit_I2CDevice::begin(bool addr_detect) {
     _begun = true;
 
     if (addr_detect) {
-    return detected();
+      return detected();
     }
     return true;
 }

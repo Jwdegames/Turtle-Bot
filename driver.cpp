@@ -12,7 +12,10 @@
 
 #include "moving_parts/motor.h"
 
+#include "sensors/ina219.h"
+
 #define BNO055_DEVICE_ID 0x28
+#define INA219_DEVICE_ID 0x41
 
 #define PIN_LED 27
 #define PIN_BUTTON 18
@@ -189,6 +192,16 @@ void config_bno055(Adafruit_BNO055 & bno055) {
 int main (int argc, char **argv)
 {
     wiringPiSetup();
+
+    // Allow for CTRL-C
+    struct sigaction sigIntHandler;
+
+    sigIntHandler.sa_handler = handle_interrupt;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+
+    sigaction(SIGINT, &sigIntHandler, NULL);
+
     motor1 = new motor(19, 20);
     motor2 = new motor(21, 22);
     motor3 = new motor(23, 25);
@@ -226,7 +239,7 @@ int main (int argc, char **argv)
 
     int model = -1;
 
-	piBoardId (&model);
+	piBoardId(&model);
 	int gpio_num = 28;
 	if (-1 == gpio_num) {
 		printf("Failed to get the number of GPIO!\n");
@@ -238,39 +251,54 @@ int main (int argc, char **argv)
     // pinMode(PIN_BUTTON, INPUT);
     printf("LED and button pins have beens setup.\n");
 
-    // Allow for CTRL-C
-    struct sigaction sigIntHandler;
-
-    sigIntHandler.sa_handler = handle_interrupt;
-    sigemptyset(&sigIntHandler.sa_mask);
-    sigIntHandler.sa_flags = 0;
-
-    sigaction(SIGINT, &sigIntHandler, NULL);
-
+    INA219 power_sensor("/dev/i2c-2", INA219_DEVICE_ID);
+		power_sensor.begin();
    // pause();
     
     while (1)
     {   
     
-        digitalWrite(PIN_LED, HIGH);
+        // digitalWrite(PIN_LED, HIGH);
         motor1 -> set_vals(1, 0);
         motor2 -> set_vals(1, 0);
         motor3 -> set_vals(1, 0);
         motor4 -> set_vals(1, 0);
 
-        bno055.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
-        bno055.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
-        bno055.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
-        bno055.getEvent(&magnetometerData, Adafruit_BNO055::VECTOR_MAGNETOMETER);
-        bno055.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
-        bno055.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
-        printf("Printing sensor values\n");
-        print_event(&orientationData);
-        print_event(&angVelocityData);
-        print_event(&linearAccelData);
-        print_event(&magnetometerData);
-        print_event(&accelerometerData);
-        print_event(&gravityData);
+        // bno055.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+        // bno055.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
+        // bno055.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+        // bno055.getEvent(&magnetometerData, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+        // bno055.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
+        // bno055.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
+        // printf("Printing sensor values\n");
+        // print_event(&orientationData);
+        // print_event(&angVelocityData);
+        // print_event(&linearAccelData);
+        // print_event(&magnetometerData);
+        // print_event(&accelerometerData);
+        // print_event(&gravityData);
+
+        float shuntvoltage1 = 0;
+        float busvoltage1 = 0;
+        float current_mA1 = 0;
+        float loadvoltage1 = 0;
+        float power_mW1 = 0;
+        
+        shuntvoltage1 = power_sensor.getShuntVoltage_mV();
+        busvoltage1 = power_sensor.getBusVoltage_V();
+        current_mA1 = power_sensor.getCurrent_mA();
+        power_mW1 = power_sensor.getPower_mW();
+        loadvoltage1 = busvoltage1 + (shuntvoltage1 / 1000);
+
+        printf("Bus Voltage: "); printf("%f ", busvoltage1); printf("V   ");
+        printf("Shunt Voltage: "); printf("%f ", shuntvoltage1); printf("mV   ");
+        printf("Load Voltage: "); printf("%f ", loadvoltage1); printf("V   ");
+        printf("Current: "); printf("%f ", current_mA1); printf("mA   ");
+        printf("Power: "); printf("%f ", power_mW1); printf("mW");
+		printf("Percent %: "); printf("%f ", (busvoltage1 - 9)/3.6 * 100); printf("%");
+        printf("\n");
+        printf("\n");
+
         printf("On\n");
         
         // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
